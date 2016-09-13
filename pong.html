@@ -1,0 +1,263 @@
+
+<html>
+
+<head>
+	<title> Pong </title>
+</head>
+
+<body bgcolor = "silver">
+
+<h1> Pong </h1>
+<br/>
+<h1>   <font color="orange" id="p1sb"> 0</font> :  <font  color="aqua" id="p2sb"> 0 </font> </h1>
+<canvas onclick="onClicked()" id="gameCanvas" width="500" height="300" style="border:1px solid"> Sorry, looks like your <b>browser</b> is too <b>incompetent</b> to display this game. Go and update it!!!1!1!111 </canvas>
+
+
+<script type="text/javascript">
+var canvas=document.getElementById("gameCanvas");
+var ctx=canvas.getContext("2d");
+var HEIGHT=canvas.height;
+var WIDTH=canvas.width;
+var p1sb=document.getElementById("p1sb");
+var p2sb=document.getElementById("p2sb");
+var but=document.getElementById("button");
+var timeOut = 1;
+var didP1WinLast = false;
+var didGameStart = false;
+const bgOpacity = 1;
+var bgColor = ctx.createLinearGradient(0,0,0,HEIGHT);
+	bgColor.addColorStop(0, "rgba(255,255,255," + bgOpacity + ")");
+	bgColor.addColorStop(0.55, "rgba(245,245,245," + bgOpacity + ")");
+	bgColor.addColorStop(0.55, "rgba(230,230,230," + bgOpacity + ")");
+	bgColor.addColorStop(1, "rgba(250,250,250," + bgOpacity + ")");
+var gamePaused = false;
+var interval = null;
+var i = 0;
+
+var ph = 60;
+var pw = 10;
+var ppf = -3;
+
+var uD = false;
+var dD = false;
+var qD = false;
+var aD = false;
+
+const bSpeed = 2;
+
+var p1s = 0;
+var p1h = 0;
+var p1Color = "orange";
+var p1y = (HEIGHT-ph)/2;
+
+
+var p2s = 0;
+var p2h = 0;
+var p2Color = "aqua";
+var p2y = (HEIGHT-ph)/2;
+
+const defbdx = 2;
+const defbdy = 0;
+var bColor = "cadetblue";
+var bx = 200;
+var by = 120;
+var bdx = 3;
+var bdy = -1;
+var br = 5;
+
+
+
+function doKeyDown(evt) {
+	if (evt.keyCode == 38) {uD = true;}
+	if (evt.keyCode == 40) {dD = true;}
+	if (evt.keyCode == 87) {qD = true;}
+	if (evt.keyCode == 83) {aD = true;}
+	if (evt.keyCode == 32) {running =  true}
+}
+
+
+function doKeyUp(evt) {
+	if (evt.keyCode == 38) {uD = false;}
+	if (evt.keyCode == 40) {dD = false;}
+	if (evt.keyCode == 87) {qD = false;}
+	if (evt.keyCode == 83) {aD = false;}
+}
+
+
+
+
+function drawCircle(x,y,r) {
+	var radgrad2 = ctx.createRadialGradient(bx-br/5,by-br/4,br/10,bx,by,br);
+	radgrad2.addColorStop(0, '#FFFF99');
+    radgrad2.addColorStop(0.8, bColor);
+    radgrad2.addColorStop(1, 'rgba(0,0,128,0)');
+    ctx.fillStyle = radgrad2;
+    ctx.fillRect(bx-br,by-br,br*2,br*2);
+    
+	
+}
+
+function updateScoreBoard() {
+	p1sb.innerHTML = p1s;
+	p2sb.innerHTML = p2s;
+	}
+
+function p2Scored()	{
+	p2s ++;
+	bdx = -bdx;
+	updateScoreBoard();
+	didP1WinLast = false;
+	timeOut = 150;
+	drawRect(0,0,WIDTH,HEIGHT,"black");
+}	
+
+function p1Scored()	{
+	p1s ++;
+	bdx = -bdx;
+	updateScoreBoard();
+	didP1WinLast = true;
+	timeOut = 150;
+	drawRect(0,0,WIDTH,HEIGHT,"black");
+}	
+
+function drawRect(x,y,w,h,color,doStroke) {
+	doStroke = typeof(doStroke) != 'undefined' ? doStroke : false;
+	ctx.beginPath();
+	ctx.fillStyle = color;
+	ctx.rect(x,y,w,h);
+	ctx.closePath();
+	ctx.fill();
+	if (doStroke) {
+	ctx.stroke();
+	}
+}
+
+function partialReset() {
+	p2y = (HEIGHT-ph)/2;
+	p1y = p2y;
+	by = HEIGHT/2;
+	bdy = defbdy;
+	if (didP1WinLast) {
+		bx = WIDTH - pw - br;
+		bdx = -defbdx;
+	}
+	else {
+		bx =  pw + br;
+		bdx = defbdx;
+	}
+}
+
+function updatePaddles() {
+	if (uD) {
+		p2y += ppf;
+	}
+	if (dD) {
+		p2y -= ppf;
+	}
+	if (qD) {
+		p1y += ppf;
+	}
+	if (aD) {
+		p1y -= ppf;
+	}
+
+	if (p1y < 0) {p1y = 0;}
+	if (p1y+ph > HEIGHT) {p1y = HEIGHT-ph;}
+
+
+	if (p2y < 0) {p2y = 0;}
+	if (p2y+ph > HEIGHT) {p2y = HEIGHT-ph;}
+
+}
+
+function updateBall() {
+
+	bx += bdx;
+	by += bdy;
+
+	if ( ((by+(br)) >= HEIGHT) || ((by-(br)) <= 0)) { 
+		bdy = -bdy;
+	}
+
+	if ( bx-br <= 0) {
+		p2Scored();
+	}
+	else if ( bx+br >= WIDTH) {
+		p1Scored();
+	}
+	else if ( (bx-br <= pw)   &&  ( ( by >= p1y ) && ( by <= p1y+ ph )  )    ) {
+		p1h ++;
+		bdx = -bdx;
+		bdy = ( 1* ((by-(p1y+ph/2))/ph));
+		//bdx = math.sqrt( (bspeed*bspeed) - (bdy*bdy) );
+	}
+	else if ( (bx+br >= WIDTH - pw)   &&  ( ( by >= p2y ) && ( by <= p2y+ ph )  )    ){
+		p2h ++;
+		bdx = -bdx;
+		bdy = (1 * ((by-(p2y+ph/2))/ph));
+		//bdx = math.sqrt( (bspeed*bspeed) - (bdy*bdy) );
+	}
+
+}
+
+
+
+function mainLoop() {
+
+
+	if (timeOut == 0) {
+
+
+		updatePaddles();
+	
+
+		updateBall();
+	
+
+		drawRect(0,0,WIDTH,HEIGHT,bgColor);
+		
+		drawRect(0,p1y,pw,ph,p1Color,true);
+		drawRect(WIDTH-pw,p2y,pw,ph,p2Color,true);
+		drawCircle(bx,by,br);
+		
+
+	}
+	else if (timeOut < 0) {timeOut = 0}
+	else if (timeOut == 1) {partialReset(); timeOut = 0;}
+	else {timeOut --}
+}
+
+function startGame() {
+
+	didGameStart = true;
+	interval = setInterval(mainLoop, 10);
+	window.addEventListener('keydown',doKeyDown,true);
+	window.addEventListener('keyup',doKeyUp,true);
+}
+
+
+function onClicked() {
+	if (didGameStart == false) { startGame(); }
+	else if (gamePaused) {interval = setInterval(mainLoop,10); gamePaused = false;}
+	else {interval = clearInterval(interval); gamePaused = true; }
+}
+
+for (i=0;i<10;i++){
+	updateBall();
+	drawRect(0,0,WIDTH,HEIGHT,bgColor,false);
+	drawRect(0,p1y,pw,ph,p1Color,true);
+	drawRect(WIDTH-pw,78,pw,ph,p2Color,true);
+	drawCircle(bx,by,br);
+}
+
+
+
+</script>
+<p> Blah! </p>
+<p> Use W.and S. to control the blue thingy,  Up and Down to control the orange one. </p>
+<p> Click the game to play. <button id= "button" onclick="onClicked()" > Play! </button> </p>
+<p> Please note that the ball braphics aren't real SVG. They are just a simple radial gradient. Feel free to change the color. It is stored in the variable "bColor" .  </p>
+<p> P.S. Also, I disabled the motion blur, because it creates weird artifacts (on chrome, anyway), similar to what you get when you try to save a gradient as a GIF. Try it yourself if you wish, change the "bgOpacity" </p>
+
+</body>
+</html>
